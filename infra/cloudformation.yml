@@ -1,0 +1,93 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: >
+  JobMatch AI - uma instância EC2 (Amazon Linux 2023) rodando o projeto com Docker Compose.
+  Pensado para estudo e portfólio, na VPC padrão da conta.
+
+Parameters:
+  KeyName:
+    Type: AWS::EC2::KeyPair::KeyName
+    Description: Par de chaves já existente, usado para acessar a instância via SSH.
+  MyIpCidr:
+    Type: String
+    Description: Seu IP no formato x.x.x.x/32. Só ele poderá usar SSH e o painel admin.
+    AllowedPattern: '^(\d{1,3}\.){3}\d{1,3}/\d{1,2}$'
+  InstanceType:
+    Type: String
+    Default: t3.small
+    AllowedValues: [t3.micro, t3.small, t3.medium]
+  RepoUrl:
+    Type: String
+    Description: URL HTTPS do repositório no GitHub (público) com este projeto.
+  AdminPassword:
+    Type: String
+    NoEcho: true
+    MinLength: 12
+    Description: Senha do painel admin PHP.
+  AnthropicApiKey:
+    Type: String
+    NoEcho: true
+    Default: ""
+    Description: Chave da API da Anthropic. Deixe vazio para usar a análise local.
+  LatestAmiId:
+    Type: AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>
+    Default: /aws/service/ami-amazon-linux-latest/al2023-ami-kernel-default-x86_64
+
+Resources:
+  SecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: JobMatch AI - site publico; SSH e painel restritos ao seu IP
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+          Description: Site
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: !Ref MyIpCidr
+          Description: SSH
+        - IpProtocol: tcp
+          FromPort: 8080
+          ToPort: 8080
+          CidrIp: !Ref MyIpCidr
+          Description: Painel admin
+
+  Instance:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: !Ref LatestAmiId
+      InstanceType: !Ref InstanceType
+      KeyName: !Ref KeyName
+      SecurityGroupIds:
+        - !GetAtt SecurityGroup.GroupId
+      MetadataOptions:
+        HttpTokens: required # IMDSv2
+      BlockDeviceMappings:
+        - DeviceName: /dev/xvda
+          Ebs:
+            VolumeSize: 20
+            VolumeType: gp3
+            Encrypted: true
+      Tags:
+        - Key: Name
+          Value: jobmatch-ai
+      # Atenção: UserData fica legível na instância. Para algo além de estudo,
+      # guarde segredos no AWS Secrets Manager ou no SSM Parameter Store.
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash
+          set -eu
+          dnf install -y git
+          git clone "${RepoUrl}" /opt/jobmatch-ai
+          cd /opt/jobmatch-ai
+          ANTHROPIC_API_KEY='${AnthropicApiKey}' ADMIN_PASSWORD='${AdminPassword}' bash scripts/setup.sh
+
+Outputs:
+  SiteUrl:
+    Description: Endereço do site (pode levar alguns minutos até o build terminar)
+    Value: !Sub "http://${Instance.PublicIp}"
+  AdminUrl:
+    Description: Painel admin (acessível só pelo seu IP; usuário "admin")
+    Value: !Sub "http://${Instance.PublicIp}:8080"

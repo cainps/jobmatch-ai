@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>JobMatch AI</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <h1>JobMatch<span>AI</span></h1>
+    <p>Compare seu currículo com uma vaga e descubra o que ajustar.</p>
+  </header>
+
+  <main class="layout">
+    <section class="card">
+      <h2>Nova análise</h2>
+      <form id="form" novalidate>
+        <label>Seu nome <small>(opcional)</small>
+          <input id="candidateName" maxlength="120" autocomplete="name">
+        </label>
+        <label>Título da vaga
+          <input id="jobTitle" maxlength="160" placeholder="Ex.: Desenvolvedor(a) Júnior">
+        </label>
+        <label>Currículo (cole o texto)
+          <textarea id="resumeText" rows="9"></textarea>
+        </label>
+        <label>Descrição da vaga
+          <textarea id="jobDescription" rows="9"></textarea>
+        </label>
+        <div class="actions">
+          <button type="submit" id="submit">Analisar</button>
+          <button type="button" id="example" class="ghost">Preencher exemplo</button>
+        </div>
+        <p id="error" class="error" role="alert" hidden></p>
+      </form>
+    </section>
+
+    <div class="column">
+      <section class="card" id="result-card" aria-live="polite">
+        <h2>Resultado</h2>
+        <div id="result" class="empty">Preencha o formulário e clique em <strong>Analisar</strong>.</div>
+      </section>
+
+      <section class="card">
+        <h2>Histórico</h2>
+        <ul id="history" class="history"></ul>
+      </section>
+    </div>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>
