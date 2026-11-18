@@ -1,5 +1,5 @@
 # JobMatch AI
-
+![JobMatch AI](docs/screenshot.png)
 Cole um currículo e a descrição de uma vaga: o sistema devolve uma **nota de aderência (0–100)**, pontos fortes, lacunas e sugestões de ajuste. A análise é feita pela **API do Claude**; sem chave configurada, usa uma análise local por palavras-chave (útil para desenvolver e testar).
 
 ## Arquitetura
